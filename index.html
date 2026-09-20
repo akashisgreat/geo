@@ -921,6 +921,113 @@ async function recordAudio() {
 }
 
 
+
+// ==================================================
+// GOOGLE APPS SCRIPT BACKEND
+// ==================================================
+// Paste your deployed Apps Script Web App URL here.
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBi8Zxv5Evlf5oLE84OyCe2C4gBPoDC1N-W5VdKi654plbSWPykut6k_WOuUnZox_P/exec";
+
+
+// Convert the displayed information into an object.
+function collectFormData() {
+
+    return {
+        localDate: document.getElementById("localDate").textContent,
+        localTime: document.getElementById("localTime").textContent,
+        timestamp: document.getElementById("timestamp").textContent,
+        timezone: document.getElementById("timezone").textContent,
+        timezoneOffset: document.getElementById("timezoneOffset").textContent,
+
+        latitude: document.getElementById("latitude").textContent,
+        longitude: document.getElementById("longitude").textContent,
+        accuracy: document.getElementById("accuracy").textContent,
+        altitude: document.getElementById("altitude").textContent,
+        altitudeAccuracy: document.getElementById("altitudeAccuracy").textContent,
+        speed: document.getElementById("speed").textContent,
+        heading: document.getElementById("heading").textContent,
+
+        userAgent: document.getElementById("userAgent").textContent,
+        language: document.getElementById("language").textContent,
+        platform: document.getElementById("platform").textContent,
+        online: document.getElementById("online").textContent,
+
+        screenSize: document.getElementById("screenSize").textContent,
+        availableSize: document.getElementById("availableSize").textContent,
+        pixelRatio: document.getElementById("pixelRatio").textContent,
+        colorDepth: document.getElementById("colorDepth").textContent,
+
+        cpuCores: document.getElementById("cpuCores").textContent,
+        memory: document.getElementById("memory").textContent,
+        touchPoints: document.getElementById("touchPoints").textContent,
+        cookies: document.getElementById("cookies").textContent,
+
+        batteryLevel: document.getElementById("batteryLevel").textContent,
+        charging: document.getElementById("charging").textContent
+    };
+}
+
+
+// Send all collected data to Google Apps Script.
+// Images/audio are included as base64 data URLs.
+async function sendToGoogleSheets() {
+
+    if (!APPS_SCRIPT_URL ||
+        APPS_SCRIPT_URL.includes("PASTE_YOUR")) {
+
+        throw new Error(
+            "Apps Script Web App URL has not been configured."
+        );
+    }
+
+    const payload = collectFormData();
+
+    payload.frontPhoto =
+        document.getElementById("frontPhoto").src || "";
+
+    payload.backPhoto =
+        document.getElementById("backPhoto").src || "";
+
+    const audioPlayer =
+        document.getElementById("audioPlayer");
+
+    payload.audio = audioPlayer.src || "";
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+
+        method: "POST",
+
+        // text/plain avoids a CORS preflight for the Apps Script Web App.
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+        },
+
+        body: JSON.stringify(payload)
+    });
+
+    const resultText = await response.text();
+
+    let result;
+
+    try {
+        result = JSON.parse(resultText);
+    } catch (e) {
+        throw new Error(
+            "Apps Script returned an unexpected response: " +
+            resultText
+        );
+    }
+
+    if (!result.success) {
+        throw new Error(
+            result.error || "Upload failed."
+        );
+    }
+
+    return result;
+}
+
+
 // ==================================================
 // MAIN BUTTON
 // ==================================================
@@ -1008,8 +1115,34 @@ document
         await recordAudio();
 
 
+        // SEND EVERYTHING TO GOOGLE APPS SCRIPT
         status.textContent =
-            "✅ Collection completed.";
+            "Uploading data to Google Sheets / Drive...";
+
+        try {
+
+            const result =
+                await sendToGoogleSheets();
+
+            status.textContent =
+                "✅ Saved successfully to Google Sheets.";
+
+            console.log(
+                "Google Apps Script result:",
+                result
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Upload error:",
+                error
+            );
+
+            status.textContent =
+                "⚠️ Collection completed, but upload failed: " +
+                error.message;
+        }
 
 
         button.disabled = false;

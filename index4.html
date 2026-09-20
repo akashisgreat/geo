@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Information Collector</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    color: #222;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+}
+
+button {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    border: 0;
+    border-radius: 10px;
+    background: #1976d2;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    margin: 20px 0;
+}
+
+button:disabled {
+    background: #999;
+}
+
+.card {
+    background: white;
+    padding: 18px;
+    margin: 15px 0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #0002;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.row:last-child {
+    border-bottom: 0;
+}
+
+.label {
+    font-weight: bold;
+    min-width: 160px;
+}
+
+.value {
+    text-align: right;
+    word-break: break-word;
+}
+
+.cameras {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.camera-box {
+    text-align: center;
+}
+
+video,
+canvas,
+img {
+    width: 100%;
+    border-radius: 10px;
+    background: #111;
+}
+
+canvas {
+    display: none;
+}
+
+img {
+    min-height: 100px;
+    object-fit: contain;
+}
+
+audio {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.status {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    background: #fff3cd;
+    margin: 10px 0;
+}
+
+.recording {
+    background: #ffdddd;
+    color: #b00000;
+    font-weight: bold;
+}
+
+@media(max-width: 650px) {
+
+    .cameras {
+        grid-template-columns: 1fr;
+    }
+
+    .row {
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .value {
+        text-align: left;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Device Information</h1>
+
+<div id="status" class="status">
+    Click the button to collect information.
+</div>
+
+<button id="collectBtn">
+    📡 Collect Information
+</button>
+
+
+<!-- TIME -->
+
+<div class="card">
+
+<h2>🕒 Time</h2>
+
+<div class="row">
+<span class="label">Local Date</span>
+<span class="value" id="localDate">-</span>
+</div>
+
+<div class="row">
+<span class="label">Local Time</span>
+<span class="value" id="localTime">-</span>
+</div>
+
+<div class="row">
+<span class="label">Timestamp</span>
+<span class="value" id="timestamp">-</span>
+</div>
+
+<div class="row">
+<span class="label">Timezone</span>
+<span class="value" id="timezone">-</span>
+</div>
+
+<div class="row">
+<span class="label">Timezone Offset</span>
+<span class="value" id="timezoneOffset">-</span>
+</div>
+
+</div>
+
+
+<!-- LOCATION -->
+
+<div class="card">
+
+<h2>📍 Location</h2>
+
+<div class="row">
+<span class="label">Latitude</span>
+<span class="value" id="latitude">-</span>
+</div>
+
+<div class="row">
+<span class="label">Longitude</span>
+<span class="value" id="longitude">-</span>
+</div>
+
+<div class="row">
+<span class="label">Accuracy</span>
+<span class="value" id="accuracy">-</span>
+</div>
+
+<div class="row">
+<span class="label">Altitude</span>
+<span class="value" id="altitude">-</span>
+</div>
+
+<div class="row">
+<span class="label">Altitude Accuracy</span>
+<span class="value" id="altitudeAccuracy">-</span>
+</div>
+
+<div class="row">
+<span class="label">Speed</span>
+<span class="value" id="speed">-</span>
+</div>
+
+<div class="row">
+<span class="label">Heading</span>
+<span class="value" id="heading">-</span>
+</div>
+
+</div>
+
+
+<!-- BROWSER -->
+
+<div class="card">
+
+<h2>🌐 Browser</h2>
+
+<div class="row">
+<span class="label">User Agent</span>
+<span class="value" id="userAgent">-</span>
+</div>
+
+<div class="row">
+<span class="label">Language</span>
+<span class="value" id="language">-</span>
+</div>
+
+<div class="row">
+<span class="label">Platform</span>
+<span class="value" id="platform">-</span>
+</div>
+
+<div class="row">
+<span class="label">Online</span>
+<span class="value" id="online">-</span>
+</div>
+
+</div>
+
+
+<!-- SCREEN -->
+
+<div class="card">
+
+<h2>🖥️ Screen</h2>
+
+<div class="row">
+<span class="label">Screen Size</span>
+<span class="value" id="screenSize">-</span>
+</div>
+
+<div class="row">
+<span class="label">Available Size</span>
+<span class="value" id="availableSize">-</span>
+</div>
+
+<div class="row">
+<span class="label">Pixel Ratio</span>
+<span class="value" id="pixelRatio">-</span>
+</div>
+
+<div class="row">
+<span class="label">Color Depth</span>
+<span class="value" id="colorDepth">-</span>
+</div>
+
+</div>
+
+
+<!-- DEVICE -->
+
+<div class="card">
+
+<h2>📱 Device</h2>
+
+<div class="row">
+<span class="label">CPU Cores</span>
+<span class="value" id="cpuCores">-</span>
+</div>
+
+<div class="row">
+<span class="label">Memory</span>
+<span class="value" id="memory">-</span>
+</div>
+
+<div class="row">
+<span class="label">Touch Points</span>
+<span class="value" id="touchPoints">-</span>
+</div>
+
+<div class="row">
+<span class="label">Cookies Enabled</span>
+<span class="value" id="cookies">-</span>
+</div>
+
+</div>
+
+
+<!-- BATTERY -->
+
+<div class="card">
+
+<h2>🔋 Battery</h2>
+
+<div class="row">
+<span class="label">Battery Level</span>
+<span class="value" id="batteryLevel">-</span>
+</div>
+
+<div class="row">
+<span class="label">Charging</span>
+<span class="value" id="charging">-</span>
+</div>
+
+</div>
+
+
+<!-- CAMERAS -->
+
+<div class="card">
+
+<h2>📷 Cameras</h2>
+
+<div class="cameras">
+
+<div class="camera-box">
+
+<h3>Front Camera</h3>
+
+<video id="frontVideo"
+       autoplay
+       playsinline></video>
+
+<canvas id="frontCanvas"></canvas>
+
+<img id="frontPhoto"
+     alt="Front camera photo">
+
+</div>
+
+
+<div class="camera-box">
+
+<h3>Back Camera</h3>
+
+<video id="backVideo"
+       autoplay
+       playsinline></video>
+
+<canvas id="backCanvas"></canvas>
+
+<img id="backPhoto"
+     alt="Back camera photo">
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- AUDIO -->
+
+<div class="card">
+
+<h2>🎤 10-Second Audio</h2>
+
+<div class="row">
+
+<span class="label">Recording Status</span>
+
+<span class="value"
+      id="audioStatus">
+    Not recorded
+</span>
+
+</div>
+
+<div class="row">
+
+<span class="label">Duration</span>
+
+<span class="value"
+      id="audioDuration">
+    -
+</span>
+
+</div>
+
+<audio id="audioPlayer"
+       controls>
+</audio>
+
+</div>
+
+
+</div>
+
+
+<script>
+
+
+// ==================================================
+// TIME
+// ==================================================
+
+function collectTime() {
+
+    const now = new Date();
+
+    document.getElementById("localDate").textContent =
+        now.toLocaleDateString();
+
+    document.getElementById("localTime").textContent =
+        now.toLocaleTimeString();
+
+    document.getElementById("timestamp").textContent =
+        now.toISOString();
+
+    document.getElementById("timezone").textContent =
+        Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    document.getElementById("timezoneOffset").textContent =
+        formatOffset(now.getTimezoneOffset());
+}
+
+
+function formatOffset(minutes) {
+
+    const sign = minutes <= 0 ? "+" : "-";
+
+    const absolute = Math.abs(minutes);
+
+    const hours = Math.floor(absolute / 60);
+
+    const mins = absolute % 60;
+
+    return "UTC" +
+        sign +
+        String(hours).padStart(2, "0") +
+        ":" +
+        String(mins).padStart(2, "0");
+}
+
+
+// ==================================================
+// LOCATION
+// ==================================================
+
+function collectLocation() {
+
+    return new Promise((resolve) => {
+
+        if (!navigator.geolocation) {
+
+            document.getElementById("latitude").textContent =
+                "Not supported";
+
+            resolve();
+
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            function(position) {
+
+                const coords = position.coords;
+
+                document.getElementById("latitude").textContent =
+                    coords.latitude;
+
+                document.getElementById("longitude").textContent =
+                    coords.longitude;
+
+                document.getElementById("accuracy").textContent =
+                    coords.accuracy ?
+                    coords.accuracy + " meters" :
+                    "Unavailable";
+
+                document.getElementById("altitude").textContent =
+                    coords.altitude !== null ?
+                    coords.altitude + " meters" :
+                    "Unavailable";
+
+                document.getElementById("altitudeAccuracy").textContent =
+                    coords.altitudeAccuracy !== null ?
+                    coords.altitudeAccuracy + " meters" :
+                    "Unavailable";
+
+                document.getElementById("speed").textContent =
+                    coords.speed !== null ?
+                    coords.speed + " m/s" :
+                    "Unavailable";
+
+                document.getElementById("heading").textContent =
+                    coords.heading !== null ?
+                    coords.heading + "°" :
+                    "Unavailable";
+
+                resolve();
+            },
+
+            function(error) {
+
+                document.getElementById("latitude").textContent =
+                    "Permission denied / unavailable";
+
+                document.getElementById("longitude").textContent =
+                    "Permission denied / unavailable";
+
+                console.log(error);
+
+                resolve();
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            }
+        );
+    });
+}
+
+
+// ==================================================
+// DEVICE
+// ==================================================
+
+function collectDeviceInfo() {
+
+    document.getElementById("userAgent").textContent =
+        navigator.userAgent;
+
+    document.getElementById("language").textContent =
+        navigator.language;
+
+    document.getElementById("platform").textContent =
+        navigator.platform || "Unavailable";
+
+    document.getElementById("online").textContent =
+        navigator.onLine ? "Yes" : "No";
+
+    document.getElementById("screenSize").textContent =
+        screen.width + " × " + screen.height;
+
+    document.getElementById("availableSize").textContent =
+        screen.availWidth + " × " + screen.availHeight;
+
+    document.getElementById("pixelRatio").textContent =
+        window.devicePixelRatio;
+
+    document.getElementById("colorDepth").textContent =
+        screen.colorDepth + " bit";
+
+    document.getElementById("cpuCores").textContent =
+        navigator.hardwareConcurrency || "Unavailable";
+
+    document.getElementById("memory").textContent =
+        navigator.deviceMemory ?
+        navigator.deviceMemory + " GB" :
+        "Unavailable";
+
+    document.getElementById("touchPoints").textContent =
+        navigator.maxTouchPoints;
+
+    document.getElementById("cookies").textContent =
+        navigator.cookieEnabled ? "Yes" : "No";
+}
+
+
+// ==================================================
+// BATTERY
+// ==================================================
+
+async function collectBattery() {
+
+    if (!navigator.getBattery) {
+
+        document.getElementById("batteryLevel").textContent =
+            "Not supported";
+
+        document.getElementById("charging").textContent =
+            "Not supported";
+
+        return;
+    }
+
+    try {
+
+        const battery =
+            await navigator.getBattery();
+
+        document.getElementById("batteryLevel").textContent =
+            Math.round(battery.level * 100) + "%";
+
+        document.getElementById("charging").textContent =
+            battery.charging ? "Yes" : "No";
+
+    } catch (error) {
+
+        document.getElementById("batteryLevel").textContent =
+            "Unavailable";
+    }
+}
+
+
+// ==================================================
+// CAMERA
+// ==================================================
+
+async function captureCamera(
+    facingMode,
+    videoId,
+    canvasId,
+    photoId
+) {
+
+    const video =
+        document.getElementById(videoId);
+
+    const canvas =
+        document.getElementById(canvasId);
+
+    const photo =
+        document.getElementById(photoId);
+
+    let stream = null;
+
+    try {
+
+        stream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video: {
+                    facingMode: {
+                        ideal: facingMode
+                    }
+                },
+
+                audio: false
+            });
+
+
+        video.srcObject = stream;
+
+
+        await new Promise(resolve => {
+
+            if (video.readyState >= 2) {
+
+                resolve();
+
+            } else {
+
+                video.onloadedmetadata =
+                    resolve;
+            }
+
+        });
+
+
+        await new Promise(resolve =>
+            setTimeout(resolve, 1000)
+        );
+
+
+        canvas.width =
+            video.videoWidth;
+
+        canvas.height =
+            video.videoHeight;
+
+
+        const ctx =
+            canvas.getContext("2d");
+
+
+        ctx.drawImage(
+            video,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        photo.src =
+            canvas.toDataURL(
+                "image/jpeg",
+                0.9
+            );
+
+    }
+
+    catch(error) {
+
+        console.log(
+            facingMode +
+            " camera error:",
+            error
+        );
+
+        photo.alt =
+            facingMode +
+            " camera unavailable";
+    }
+
+    finally {
+
+        if (stream) {
+
+            stream.getTracks().forEach(
+                track => track.stop()
+            );
+        }
+    }
+}
+
+
+// ==================================================
+// 10 SECOND AUDIO
+// ==================================================
+
+async function recordAudio() {
+
+    const audioStatus =
+        document.getElementById(
+            "audioStatus"
+        );
+
+    const audioDuration =
+        document.getElementById(
+            "audioDuration"
+        );
+
+    const audioPlayer =
+        document.getElementById(
+            "audioPlayer"
+        );
+
+
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
+
+        audioStatus.textContent =
+            "Microphone not supported";
+
+        return;
+    }
+
+
+    let stream = null;
+
+
+    try {
+
+        // Ask for microphone permission
+
+        stream =
+            await navigator.mediaDevices.getUserMedia({
+                audio: true
+            });
+
+
+        // Find a supported recording format
+
+        let options = {};
+
+        if (MediaRecorder.isTypeSupported(
+            "audio/webm;codecs=opus"
+        )) {
+
+            options.mimeType =
+                "audio/webm;codecs=opus";
+
+        } else if (
+            MediaRecorder.isTypeSupported(
+                "audio/mp4"
+            )
+        ) {
+
+            options.mimeType =
+                "audio/mp4";
+        }
+
+
+        const recorder =
+            new MediaRecorder(
+                stream,
+                options
+            );
+
+
+        const chunks = [];
+
+
+        recorder.ondataavailable =
+            function(event) {
+
+                if (event.data.size > 0) {
+
+                    chunks.push(event.data);
+                }
+            };
+
+
+        recorder.onstop =
+            function() {
+
+                const blob =
+                    new Blob(
+                        chunks,
+                        {
+                            type:
+                                recorder.mimeType
+                        }
+                    );
+
+
+                const audioURL =
+                    URL.createObjectURL(blob);
+
+
+                audioPlayer.src =
+                    audioURL;
+
+
+                audioDuration.textContent =
+                    "10 seconds";
+
+
+                audioStatus.textContent =
+                    "✅ Recorded";
+
+
+                if (stream) {
+
+                    stream.getTracks().forEach(
+                        track => track.stop()
+                    );
+                }
+            };
+
+
+        // Start recording
+
+        recorder.start();
+
+
+        audioStatus.textContent =
+            "🔴 Recording...";
+
+
+        // Countdown
+
+        for (
+            let seconds = 10;
+            seconds > 0;
+            seconds--
+        ) {
+
+            audioStatus.textContent =
+                "🔴 Recording... " +
+                seconds +
+                " sec";
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 1000)
+            );
+        }
+
+
+        // Stop at exactly 10 seconds
+
+        recorder.stop();
+
+    }
+
+    catch(error) {
+
+        console.log(
+            "Microphone error:",
+            error
+        );
+
+        audioStatus.textContent =
+            "Microphone permission denied / unavailable";
+
+        if (stream) {
+
+            stream.getTracks().forEach(
+                track => track.stop()
+            );
+        }
+    }
+}
+
+
+// ==================================================
+// MAIN BUTTON
+// ==================================================
+
+document
+.getElementById("collectBtn")
+.addEventListener(
+    "click",
+    async function() {
+
+        const button =
+            document.getElementById(
+                "collectBtn"
+            );
+
+        const status =
+            document.getElementById(
+                "status"
+            );
+
+
+        button.disabled = true;
+
+
+        // TIME
+
+        status.textContent =
+            "Collecting time information...";
+
+        collectTime();
+
+
+        // DEVICE
+
+        status.textContent =
+            "Collecting device information...";
+
+        collectDeviceInfo();
+
+
+        // BATTERY
+
+        await collectBattery();
+
+
+        // LOCATION
+
+        status.textContent =
+            "Requesting location permission...";
+
+        await collectLocation();
+
+
+        // FRONT CAMERA
+
+        status.textContent =
+            "Requesting front camera permission...";
+
+        await captureCamera(
+            "user",
+            "frontVideo",
+            "frontCanvas",
+            "frontPhoto"
+        );
+
+
+        // BACK CAMERA
+
+        status.textContent =
+            "Requesting back camera permission...";
+
+        await captureCamera(
+            "environment",
+            "backVideo",
+            "backCanvas",
+            "backPhoto"
+        );
+
+
+        // AUDIO
+
+        status.textContent =
+            "Requesting microphone permission...";
+
+        await recordAudio();
+
+
+        status.textContent =
+            "✅ Collection completed.";
+
+
+        button.disabled = false;
+
+    }
+);
+
+</script>
+
+</body>
+</html>
