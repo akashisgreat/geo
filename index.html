@@ -971,60 +971,34 @@ function collectFormData() {
 // Send all collected data to Google Apps Script.
 // Images/audio are included as base64 data URLs.
 async function sendToGoogleSheets() {
-
-    if (!APPS_SCRIPT_URL ||
-        APPS_SCRIPT_URL.includes("PASTE_YOUR")) {
-
-        throw new Error(
-            "Apps Script Web App URL has not been configured."
-        );
-    }
-
     const payload = collectFormData();
 
     payload.frontPhoto =
-        document.getElementById("frontPhoto").src || "";
+        document.getElementById("frontPhoto")?.src || "";
 
     payload.backPhoto =
-        document.getElementById("backPhoto").src || "";
+        document.getElementById("backPhoto")?.src || "";
 
-    const audioPlayer =
-        document.getElementById("audioPlayer");
+    payload.audio =
+        document.getElementById("audioPlayer")?.src || "";
 
-    payload.audio = audioPlayer.src || "";
+    if (!APPS_SCRIPT_URL ||
+        APPS_SCRIPT_URL.includes("PASTE_YOUR")) {
+        throw new Error("Google Apps Script URL is not configured.");
+    }
 
-    const response = await fetch(APPS_SCRIPT_URL, {
-
+    await fetch(APPS_SCRIPT_URL, {
         method: "POST",
-
-        // text/plain avoids a CORS preflight for the Apps Script Web App.
+        mode: "no-cors",
         headers: {
             "Content-Type": "text/plain;charset=utf-8"
         },
-
         body: JSON.stringify(payload)
     });
 
-    const resultText = await response.text();
-
-    let result;
-
-    try {
-        result = JSON.parse(resultText);
-    } catch (e) {
-        throw new Error(
-            "Apps Script returned an unexpected response: " +
-            resultText
-        );
-    }
-
-    if (!result.success) {
-        throw new Error(
-            result.error || "Upload failed."
-        );
-    }
-
-    return result;
+    // no-cors does not allow us to read the response,
+    // but the request has been sent to Apps Script.
+    return true;
 }
 
 
