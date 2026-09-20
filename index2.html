@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Device Information</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+td:first-child {
+    font-weight: bold;
+    width: 35%;
+}
+
+#status {
+    margin-top: 15px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Device Information</h2>
+
+<p>
+This page requests your location permission and displays the information
+your browser makes available.
+</p>
+
+<button onclick="startTracker()">
+    Allow Location & Continue
+</button>
+
+<div id="status"></div>
+
+<table id="result"></table>
+
+<script>
+
+const API_URL = "YOUR_APPS_SCRIPT_URL";
+
+
+function getOS() {
+
+    const ua = navigator.userAgent;
+
+    if (/Windows/i.test(ua))
+        return "Windows";
+
+    if (/Android/i.test(ua))
+        return "Android";
+
+    if (/iPhone|iPad|iPod/i.test(ua))
+        return "iOS";
+
+    if (/Mac/i.test(ua))
+        return "macOS";
+
+    if (/Linux/i.test(ua))
+        return "Linux";
+
+    return "Unknown";
+}
+
+
+function getBrowser() {
+
+    const ua = navigator.userAgent;
+
+    if (/Edg/i.test(ua))
+        return "Microsoft Edge";
+
+    if (/Chrome/i.test(ua) && !/Edg/i.test(ua))
+        return "Google Chrome";
+
+    if (/Firefox/i.test(ua))
+        return "Firefox";
+
+    if (/Safari/i.test(ua) && !/Chrome/i.test(ua))
+        return "Safari";
+
+    return "Unknown";
+}
+
+
+async function getBattery() {
+
+    if (!navigator.getBattery)
+        return {
+            battery: "Unavailable",
+            charging: "Unavailable"
+        };
+
+    try {
+
+        const b = await navigator.getBattery();
+
+        return {
+            battery: Math.round(b.level * 100) + "%",
+            charging: b.charging ? "Yes" : "No"
+        };
+
+    } catch (e) {
+
+        return {
+            battery: "Unavailable",
+            charging: "Unavailable"
+        };
+    }
+}
+
+
+function show(key, value) {
+
+    const table = document.getElementById("result");
+
+    const row = document.createElement("tr");
+
+    const k = document.createElement("td");
+    k.textContent = key;
+
+    const v = document.createElement("td");
+    v.textContent = value;
+
+    row.appendChild(k);
+    row.appendChild(v);
+
+    table.appendChild(row);
+}
+
+
+async function startTracker() {
+
+    const status = document.getElementById("status");
+
+    status.textContent = "Collecting information...";
+
+    document.getElementById("result").innerHTML = "";
+
+    const batteryInfo = await getBattery();
+
+    const data = {
+
+        latitude: "",
+        longitude: "",
+        accuracy: "",
+        altitude: "",
+        speed: "",
+        heading: "",
+
+        battery: batteryInfo.battery,
+        charging: batteryInfo.charging,
+
+        os: getOS(),
+        browser: getBrowser(),
+
+        screen:
+            screen.width +
+            " × " +
+            screen.height,
+
+        language: navigator.language,
+
+        timezone:
+            Intl.DateTimeFormat()
+                .resolvedOptions()
+                .timeZone,
+
+        cpuCores:
+            navigator.hardwareConcurrency || "Unavailable",
+
+        ram:
+            navigator.deviceMemory
+            ? navigator.deviceMemory + " GB"
+            : "Unavailable",
+
+        touch:
+            navigator.maxTouchPoints > 0
+            ? "Yes"
+            : "No",
+
+        online:
+            navigator.onLine
+            ? "Yes"
+            : "No"
+    };
+
+
+    function processLocation(position) {
+
+        const c = position.coords;
+
+        data.latitude = c.latitude;
+        data.longitude = c.longitude;
+        data.accuracy = c.accuracy + " m";
+
+        data.altitude =
+            c.altitude !== null
+            ? c.altitude + " m"
+            : "Unavailable";
+
+        data.speed =
+            c.speed !== null
+            ? c.speed + " m/s"
+            : "Unavailable";
+
+        data.heading =
+            c.heading !== null
+            ? c.heading + "°"
+            : "Unavailable";
+
+        displayAndSend(data);
+    }
+
+
+    function locationError(error) {
+
+        status.textContent =
+            "Location permission was not granted. Other information will still be collected.";
+
+        displayAndSend(data);
+    }
+
+
+    if (!navigator.geolocation) {
+
+        displayAndSend(data);
+
+    } else {
+
+        navigator.geolocation.getCurrentPosition(
+            processLocation,
+            locationError,
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            }
+        );
+    }
+}
+
+
+function displayAndSend(data) {
+
+    document.getElementById("status").textContent =
+        "Information collected.";
+
+    show("Latitude", data.latitude || "Unavailable");
+    show("Longitude", data.longitude || "Unavailable");
+    show("Accuracy", data.accuracy || "Unavailable");
+    show("Altitude", data.altitude || "Unavailable");
+    show("Speed", data.speed || "Unavailable");
+    show("Heading", data.heading || "Unavailable");
+
+    show("Battery", data.battery);
+    show("Charging", data.charging);
+
+    show("Operating System", data.os);
+    show("Browser", data.browser);
+
+    show("Screen", data.screen);
+    show("Language", data.language);
+    show("Timezone", data.timezone);
+
+    show("CPU Cores", data.cpuCores);
+    show("RAM", data.ram);
+    show("Touch Screen", data.touch);
+    show("Online", data.online);
+
+
+    // fetch(API_URL, {
+
+    //     method: "POST",
+
+    //     headers: {
+    //         "Content-Type": "text/plain;charset=utf-8"
+    //     },
+
+    //     body: JSON.stringify(data)
+
+    // })
+    // .then(response => response.text())
+
+    // .then(result => {
+
+    //     document.getElementById("status").textContent =
+    //         "Information collected and saved.";
+
+    // })
+
+    // .catch(error => {
+
+    //     document.getElementById("status").textContent =
+    //         "Information collected, but could not be saved.";
+
+    //     console.error(error);
+
+    // });
+}
+
+</script>
+
+</body>
+</html>
